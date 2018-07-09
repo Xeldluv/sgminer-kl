@@ -1435,7 +1435,7 @@ char *set_difficulty_multiplier(char *arg)
   return NULL;
 }
 
-char *set_benchmark_sequence(char *arg)
+char *set_benchmark_sequence(const char *arg)
 {
   if (!(arg && arg[0]))
     return "Invalid parameter for set benchmark sequence";
@@ -1451,6 +1451,8 @@ char *set_benchmark_sequence(char *arg)
       opt_benchmark_seq[i] = arg[i] - '0';
   }
   opt_benchmark = true;
+
+  return NULL;
 }
 
 /* These options are available from config file or commandline */
