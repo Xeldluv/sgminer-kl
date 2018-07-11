@@ -985,10 +985,13 @@ static cl_int queue_lyra2z_kernel(struct __clState *clState, struct _dev_blk_ctx
 	CL_SET_ARG(blk->work->blk.cty_b);
 	CL_SET_ARG(blk->work->blk.cty_c);
 	num = 0;
-	// keccak - search1
+	// lyra2 - search1
 	kernel = clState->extra_kernels;
 	CL_SET_ARG(clState->buffer1);
 	CL_SET_ARG(clState->Scratchpads);
+	num = 0;
+	//output
+	CL_NEXTKERNEL_SET_ARG(clState->buffer1);
 	CL_SET_ARG(clState->outputBuffer);
 	CL_SET_ARG(le_target);
 	
@@ -1029,10 +1032,12 @@ cl_int truly_enqueue_lyra2Z_kernel(struct __clState *clState, size_t start, size
 	cl_command_queue que = clState->commandQueue;
 	const size_t off2[] = { 0, start };
 	const size_t gws[] = { 4, scan };
+	const size_t expand[] = { 4, 16 };
 	const size_t local_work_size = 256;
 	const size_t mangle[] = { 4, 8 };
 	status |= clEnqueueNDRangeKernel(que, clState->kernel, 1, &start, &scan, &local_work_size, 0, NULL, NULL); // blake
-	status |= clEnqueueNDRangeKernel(que, clState->extra_kernels[0], 1, &start, &scan, &local_size, 0, NULL, NULL); // lyra2
+	status |= clEnqueueNDRangeKernel(que, clState->extra_kernels[0], 2, off2, gws, expand, 0, NULL, NULL); // lyra 4w monolithic
+	status |= clEnqueueNDRangeKernel(que, clState->extra_kernels[1], 1, &start, &scan, &local_size, 0, NULL, NULL); // output
 	return status;
 }
 
@@ -2002,7 +2007,7 @@ static algorithm_settings_t algos[] = {
 
   { "lyra2re", ALGO_LYRA2RE, "", 1, 128, 128, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 4, 2 * 8 * 4194304, 0, lyra2re_regenhash, blake256_midstate, blake256_prepare_work, queue_lyra2re_kernel, gen_hash, NULL },
   { "lyra2rev2", ALGO_LYRA2REV2, "", 1, 256, 256, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 6, -1, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, lyra2rev2_regenhash, blake256_midstate, blake256_prepare_work, queue_lyra2rev2_kernel, gen_hash, append_neoscrypt_compiler_options },
-  { "lyra2Z"   , ALGO_LYRA2Z   , "", 1, 256, 256, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 0, 0, lyra2Z_regenhash,  blake256_midstate, blake256_prepare_work, queue_lyra2z_kernel, gen_hash, append_neoscrypt_compiler_options, NULL,
+  { "lyra2Z"   , ALGO_LYRA2Z   , "", 1, 256, 256, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 2, 0, 0, lyra2Z_regenhash,  blake256_midstate, blake256_prepare_work, queue_lyra2z_kernel, gen_hash, append_neoscrypt_compiler_options, NULL,
   {
 	initialize_lyra2Z_kernel,
 	truly_enqueue_lyra2Z_kernel
